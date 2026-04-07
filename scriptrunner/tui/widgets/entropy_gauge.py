@@ -36,7 +36,7 @@ class EntropyGauge(Widget):
         pct = self.entropy / 100.0
 
         # Wide bar — 38 chars
-        width = 38
+        width = 34
         filled = int(pct * width)
         bar = "█" * filled + "░" * (width - filled)
 
@@ -55,13 +55,13 @@ class EntropyGauge(Widget):
         out.append("║  ENTROPY GAUGE                           ║\n", style="bold white")
         out.append("╠══════════════════════════════════════════╣\n", style="dim")
         out.append(f"║  {self.entropy:5.1f}%  ", style="bold")
-        out.append(label.ljust(33), style=f"bold {color}")
+        out.append(label.ljust(32), style=f"bold {color}")
         out.append("║\n", style="dim")
         out.append("║  [", style="dim")
         out.append(bar, style=color)
-        out.append("]\n║\n", style="dim")
-        out.append("║   0%  SAFE    30%  CAUTION    70%  DANGER    90%  ║\n", style="dim")
+        out.append("]    ║\n", style="dim")
+        out.append("║   0% SAFE 30% CAUTION 70% DANGER 90%     ║\n", style="dim")
         out.append("╠══════════════════════════════════════════╣\n", style="dim")
-        out.append("║  decay: -0.1/s idle  │  /compress -20e  ║\n", style="dim")
+        out.append("║  decay: -0.1/s idle  │  /compress -20e   ║\n", style="dim")
         out.append("╚══════════════════════════════════════════╝", style="dim")
         return out
