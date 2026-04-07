@@ -27,8 +27,6 @@ def _get_state(session: Session) -> GameState:
 def _track_scheduler(state: GameState) -> None:
     """Track timing for The Scheduler mission: mine every 2s ±200ms for 60s."""
     now = datetime.utcnow()
-    if state.scheduler_bad:
-        return
     if not state.scheduler_active:
         state.scheduler_active = True
         state.scheduler_mines = 1
@@ -41,13 +39,11 @@ def _track_scheduler(state: GameState) -> None:
     if abs(elapsed - 2.0) <= 0.2:
         state.scheduler_mines += 1
         state.scheduler_last_mine_at = now
-    elif elapsed > 5.0:
-        # Too long a gap — reset
+    else:
+        # Wrong interval or too long a gap — reset and start over
+        state.scheduler_bad = False
         state.scheduler_mines = 1
         state.scheduler_last_mine_at = now
-    else:
-        # Wrong interval — mark failed
-        state.scheduler_bad = True
 
 
 def _log_call(endpoint: str, method: str, status_code: int, result: dict, session: Session) -> None:

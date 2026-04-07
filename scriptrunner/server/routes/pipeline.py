@@ -2,7 +2,6 @@
 
 import json
 import random
-import time
 from datetime import datetime
 from typing import List
 
@@ -15,9 +14,6 @@ from scriptrunner.server.models import CallLog, GameState, Mission
 from scriptrunner.server.mission_engine import check_missions
 
 router = APIRouter()
-
-_last_mine_time: float = 0.0
-MINE_COOLDOWN = 1.0
 
 ALLOWED_OPS = {"mine", "compress", "status"}
 
@@ -32,8 +28,6 @@ class PipelineRequest(BaseModel):
 
 @router.post("/pipeline")
 def post_pipeline(body: PipelineRequest, session: Session = Depends(get_session)):
-    global _last_mine_time
-
     state = session.exec(select(GameState)).first()
     if state is None:
         raise HTTPException(status_code=500, detail="Game state not initialized")
@@ -59,10 +53,6 @@ def post_pipeline(body: PipelineRequest, session: Session = Depends(get_session)
             continue
 
         if op == "mine":
-            now = time.time()
-            if now - _last_mine_time < MINE_COOLDOWN:
-                results.append({"op": "mine", "error": "cooldown — 1s between mines"})
-                continue
             entropy = state.entropy
             if entropy >= 90:
                 results.append({"op": "mine", "error": "entropy critical"})
@@ -86,7 +76,6 @@ def post_pipeline(body: PipelineRequest, session: Session = Depends(get_session)
             state.mines_total += 1
             if entropy > 70:
                 state.danger_mines += 1
-            _last_mine_time = now
             mine_count += 1
 
         elif op == "compress":
