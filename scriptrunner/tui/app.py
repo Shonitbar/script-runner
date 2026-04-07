@@ -8,6 +8,7 @@ from textual.widgets import Footer, Header
 
 from scriptrunner.tui.widgets.automations_panel import AutomationsPanel
 from scriptrunner.tui.widgets.core_panel import CorePanel
+from scriptrunner.tui.widgets.entropy_gauge import EntropyGauge
 from scriptrunner.tui.widgets.log_panel import LogPanel
 from scriptrunner.tui.widgets.missions_panel import MissionsPanel
 
@@ -23,7 +24,7 @@ class ScriptRunnerApp(App):
         align: center top;
         padding: 1;
     }
-    CorePanel, MissionsPanel, LogPanel, AutomationsPanel {
+    CorePanel, MissionsPanel, LogPanel, AutomationsPanel, EntropyGauge {
         width: 46;
         height: auto;
         margin-bottom: 1;
@@ -34,6 +35,7 @@ class ScriptRunnerApp(App):
     def compose(self) -> ComposeResult:
         yield Header(show_clock=True)
         yield CorePanel()
+        yield EntropyGauge()
         yield MissionsPanel()
         yield AutomationsPanel()
         yield LogPanel()
@@ -46,6 +48,7 @@ class ScriptRunnerApp(App):
         import websockets
 
         core = self.query_one(CorePanel)
+        gauge = self.query_one(EntropyGauge)
         missions_panel = self.query_one(MissionsPanel)
         log_panel = self.query_one(LogPanel)
         automations_panel = self.query_one(AutomationsPanel)
@@ -66,6 +69,9 @@ class ScriptRunnerApp(App):
                             core.cycle_multiplier = data["cycle_multiplier"]
                             core.overclock_active = data.get("overclock_active", False)
                             core.overclock_remaining = data.get("overclock_remaining", 0)
+                            core.prestige_count = data.get("prestige_count", 0)
+                            core.dark_ops_unlocked = data.get("dark_ops_unlocked", False)
+                            gauge.entropy = data["entropy"]
                             missions_panel.missions = data.get("missions", [])
                             log_panel.logs = data.get("logs", [])
                             automations_panel.automations = data.get("automations", [])

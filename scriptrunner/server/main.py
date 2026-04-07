@@ -17,7 +17,7 @@ app = FastAPI(title="ScriptRunner", lifespan=lifespan)
 
 # Routes registered here as features are added
 from scriptrunner.server.routes import (  # noqa: E402
-    core, ws, missions, history, compress, automate, pipeline
+    core, ws, missions, history, compress, automate, pipeline, prestige, dark_ops
 )
 app.include_router(core.router)
 app.include_router(ws.router)
@@ -26,3 +26,5 @@ app.include_router(history.router)
 app.include_router(compress.router)
 app.include_router(automate.router)
 app.include_router(pipeline.router)
+app.include_router(prestige.router)
+app.include_router(dark_ops.router)

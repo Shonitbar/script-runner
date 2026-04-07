@@ -41,6 +41,7 @@ async def _decay_loop() -> None:
             if automations:
                 passive = len(automations) * 0.5 * state.cycle_multiplier
                 state.cycles += passive
+                state.passive_ticks += 1
                 changed = True
 
             # Volatility: random entropy spikes (Tier 3+ only)

@@ -45,6 +45,8 @@ class CorePanel(Widget):
     cycle_multiplier: reactive[float] = reactive(1.0)
     overclock_active: reactive[bool] = reactive(False)
     overclock_remaining: reactive[int] = reactive(0)
+    prestige_count: reactive[int] = reactive(0)
+    dark_ops_unlocked: reactive[bool] = reactive(False)
 
     def render(self) -> Text:
         zone = entropy_zone(self.entropy)
@@ -68,9 +70,14 @@ class CorePanel(Widget):
         out.append(f"  {self.entropy:5.1f}%  ", style=color)
         out.append(zone.upper().ljust(8), style=f"bold {color}")
         out.append("║\n", style="dim")
-        out.append(f"║  ◈  SYNTH     {self.synth:<28}", style="cyan")
+        synth_line = f"{self.synth}/5"
+        out.append(f"║  ◈  SYNTH     {synth_line:<28}", style="cyan")
         out.append("║\n", style="dim")
         out.append(f"║  ⏱  UPTIME    {uptime_str:<28}", style="dim")
         out.append("║\n", style="dim")
+        if self.prestige_count > 0:
+            prestige_str = f"✦ PRESTIGE {self.prestige_count}  {'[DARK OPS]' if self.dark_ops_unlocked else ''}"
+            out.append(f"║  {prestige_str:<40}", style="bold magenta")
+            out.append("║\n", style="dim")
         out.append("╚══════════════════════════════════════════╝", style="dim")
         return out

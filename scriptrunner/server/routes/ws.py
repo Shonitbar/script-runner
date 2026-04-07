@@ -57,6 +57,8 @@ async def websocket_endpoint(websocket: WebSocket):
                         "uptime": int(time.time() - _server_start),
                         "overclock_active": state.overclock_active,
                         "overclock_remaining": overclock_remaining,
+                        "prestige_count": state.prestige_count,
+                        "dark_ops_unlocked": state.dark_ops_unlocked,
                         "missions": [
                             {
                                 "slug": m.slug,

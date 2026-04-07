@@ -32,6 +32,11 @@ class GameState(SQLModel, table=True):
     overclock_ends_at: Optional[datetime] = Field(default=None)
     # Passive income tick counter (for Full Auto mission)
     passive_ticks: int = Field(default=0)
+    # Prestige
+    prestige_count: int = Field(default=0)
+    dark_ops_unlocked: bool = Field(default=False)
+    # Dark ops: HMAC key shards collected (bitmask 0b11111 = all 5)
+    hmac_shards: int = Field(default=0)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
