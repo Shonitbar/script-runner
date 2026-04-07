@@ -1,0 +1,11 @@
+# Game server + TUI
+fastapi>=0.111.0
+uvicorn[standard]>=0.30.0
+sqlmodel>=0.0.19
+textual>=0.63.0
+rich>=13.7.0
+typer>=0.12.0
+websockets>=12.0
+
+# Player scripts (starter.py and your own automations)
+requests>=2.31.0
