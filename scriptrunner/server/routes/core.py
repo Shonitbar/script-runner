@@ -8,6 +8,7 @@ from sqlmodel import Session, select
 
 from scriptrunner.server.db import get_session, engine
 from scriptrunner.server.models import CallLog, GameState
+from scriptrunner.server.mission_engine import check_missions
 
 router = APIRouter()
 
@@ -36,6 +37,11 @@ def _log_call(endpoint: str, method: str, status_code: int, result: dict, sessio
 @router.get("/status")
 def get_status(session: Session = Depends(get_session)):
     state = _get_state(session)
+    state.status_calls += 1
+    state.updated_at = datetime.utcnow()
+
+    newly_completed = check_missions(state, session)
+
     uptime = int(time.time() - _server_start)
     result = {
         "cycles": round(state.cycles, 2),
@@ -45,6 +51,9 @@ def get_status(session: Session = Depends(get_session)):
         "cycle_multiplier": state.cycle_multiplier,
         "uptime": uptime,
     }
+    if newly_completed:
+        result["missions_completed"] = newly_completed
+
     _log_call("/status", "GET", 200, result, session)
     session.commit()
     return result
@@ -79,18 +88,22 @@ def post_mine(session: Session = Depends(get_session)):
         loss_event = random.random() < 0.10
 
     gain = gain * state.cycle_multiplier
+    state.mines_total += 1
+    _last_mine_time = now
 
     if loss_event:
         state.cycles = max(0, state.cycles - 50)
         state.entropy = min(100, state.entropy + 0.5)
         state.updated_at = datetime.utcnow()
-        _last_mine_time = now
+        newly_completed = check_missions(state, session)
         result = {
             "cycles": round(state.cycles, 2),
             "entropy": round(state.entropy, 2),
             "message": "surge — lost 50 cycles",
             "zone": "danger",
         }
+        if newly_completed:
+            result["missions_completed"] = newly_completed
         _log_call("/mine", "POST", 200, result, session)
         session.add(state)
         session.commit()
@@ -99,7 +112,8 @@ def post_mine(session: Session = Depends(get_session)):
     state.cycles += gain
     state.entropy = min(100, state.entropy + 0.5)
     state.updated_at = datetime.utcnow()
-    _last_mine_time = now
+
+    newly_completed = check_missions(state, session)
 
     zone = "safe" if entropy < 30 else "caution" if entropy < 70 else "danger"
     result = {
@@ -109,6 +123,9 @@ def post_mine(session: Session = Depends(get_session)):
         "message": "cycle registered",
         "zone": zone,
     }
+    if newly_completed:
+        result["missions_completed"] = newly_completed
+
     _log_call("/mine", "POST", 200, result, session)
     session.add(state)
     session.commit()

@@ -1,6 +1,6 @@
 import multiprocessing
-import subprocess
-import sys
+import os
+import signal
 import time
 
 import typer
@@ -18,9 +18,13 @@ def _run_server() -> None:
     )
 
 
-def _run_tui() -> None:
-    from scriptrunner.tui.app import ScriptRunnerApp
-    ScriptRunnerApp().run()
+def _shutdown(proc: multiprocessing.Process) -> None:
+    if proc.is_alive():
+        proc.terminate()
+        proc.join(timeout=3)
+    if proc.is_alive():
+        proc.kill()
+        proc.join(timeout=2)
 
 
 @app.command()
@@ -31,14 +35,22 @@ def start() -> None:
     server_proc = multiprocessing.Process(target=_run_server, daemon=True)
     server_proc.start()
 
+    # Forward SIGTERM/SIGINT to the server process, then exit cleanly
+    def _handle_signal(signum, frame):
+        _shutdown(server_proc)
+        raise SystemExit(0)
+
+    signal.signal(signal.SIGTERM, _handle_signal)
+    signal.signal(signal.SIGINT, _handle_signal)
+
     # Give server a moment to bind
     time.sleep(1.0)
 
     try:
-        _run_tui()
+        from scriptrunner.tui.app import ScriptRunnerApp
+        ScriptRunnerApp().run()
     finally:
-        server_proc.terminate()
-        server_proc.join(timeout=3)
+        _shutdown(server_proc)
 
 
 @app.command()

@@ -1,3 +1,9 @@
+# Save file
+scriptrunner.db
+
+# Reports
+reports/
+
 # Claude
 .claude/
 
