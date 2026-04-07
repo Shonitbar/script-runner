@@ -43,6 +43,8 @@ class CorePanel(Widget):
     tier: reactive[int] = reactive(0)
     uptime: reactive[int] = reactive(0)
     cycle_multiplier: reactive[float] = reactive(1.0)
+    overclock_active: reactive[bool] = reactive(False)
+    overclock_remaining: reactive[int] = reactive(0)
 
     def render(self) -> Text:
         zone = entropy_zone(self.entropy)
@@ -52,13 +54,14 @@ class CorePanel(Widget):
 
         uptime_str = f"{self.uptime // 3600:02d}:{(self.uptime % 3600) // 60:02d}:{self.uptime % 60:02d}"
         mult_str = f"  x{self.cycle_multiplier:.1f}" if self.cycle_multiplier != 1.0 else ""
+        oc_str = f"  ⚡OC {self.overclock_remaining}s" if self.overclock_active else ""
 
         out = Text()
         out.append("╔══════════════════════════════════════════╗\n", style="dim")
         out.append(f"║  SCRIPTRUNNER  v0.1   [{tier_name}]".ljust(43), style="bold green")
         out.append("║\n", style="dim")
         out.append("╠══════════════════════════════════════════╣\n", style="dim")
-        out.append(f"║  ⚙  CYCLES    {self.cycles:>10.2f}{mult_str}".ljust(43))
+        out.append(f"║  ⚙  CYCLES    {self.cycles:>10.2f}{mult_str}{oc_str}".ljust(43))
         out.append("║\n", style="dim")
         out.append("║  ⚡ ENTROPY   ", style="")
         out.append_text(bar)

@@ -14,9 +14,24 @@ class GameState(SQLModel, table=True):
     # Mission tracking counters
     mines_total: int = Field(default=0)
     status_calls: int = Field(default=0)
-    # Patience mission: timestamp of the "first mine" trigger
+    # Patience mission tracking
     patience_first_mine_at: Optional[datetime] = Field(default=None)
     patience_first_entropy: Optional[float] = Field(default=None)
+    # Compressor mission tracking (saw entropy >70 flag)
+    compressor_saw_high: bool = Field(default=False)
+    # Danger zone mission tracking
+    danger_mines: int = Field(default=0)
+    # Scheduler mission tracking
+    scheduler_mines: int = Field(default=0)
+    scheduler_active: bool = Field(default=False)
+    scheduler_last_mine_at: Optional[datetime] = Field(default=None)
+    scheduler_bad: bool = Field(default=False)
+    # Overclock mission tracking
+    overclock_active: bool = Field(default=False)
+    overclock_mines: int = Field(default=0)
+    overclock_ends_at: Optional[datetime] = Field(default=None)
+    # Passive income tick counter (for Full Auto mission)
+    passive_ticks: int = Field(default=0)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
@@ -28,6 +43,14 @@ class CallLog(SQLModel, table=True):
     status_code: int
     result_json: str
     timestamp: datetime = Field(default_factory=datetime.utcnow)
+
+
+class Automation(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    name: str = Field(unique=True, index=True)
+    interval_sec: int = Field(default=10)
+    registered_at: datetime = Field(default_factory=datetime.utcnow)
+    active: bool = Field(default=True)
 
 
 class Mission(SQLModel, table=True):

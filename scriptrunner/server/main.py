@@ -16,8 +16,13 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="ScriptRunner", lifespan=lifespan)
 
 # Routes registered here as features are added
-from scriptrunner.server.routes import core, ws, missions, history  # noqa: E402
+from scriptrunner.server.routes import (  # noqa: E402
+    core, ws, missions, history, compress, automate, pipeline
+)
 app.include_router(core.router)
 app.include_router(ws.router)
 app.include_router(missions.router)
 app.include_router(history.router)
+app.include_router(compress.router)
+app.include_router(automate.router)
+app.include_router(pipeline.router)

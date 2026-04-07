@@ -1,4 +1,4 @@
-"""ScriptRunner TUI — full dashboard with CORE, MISSIONS, and LOG panels."""
+"""ScriptRunner TUI — full dashboard."""
 
 import asyncio
 import json
@@ -6,9 +6,10 @@ import json
 from textual.app import App, ComposeResult
 from textual.widgets import Footer, Header
 
+from scriptrunner.tui.widgets.automations_panel import AutomationsPanel
 from scriptrunner.tui.widgets.core_panel import CorePanel
-from scriptrunner.tui.widgets.missions_panel import MissionsPanel
 from scriptrunner.tui.widgets.log_panel import LogPanel
+from scriptrunner.tui.widgets.missions_panel import MissionsPanel
 
 WS_URL = "ws://127.0.0.1:8000/ws"
 
@@ -22,19 +23,10 @@ class ScriptRunnerApp(App):
         align: center top;
         padding: 1;
     }
-    CorePanel {
+    CorePanel, MissionsPanel, LogPanel, AutomationsPanel {
         width: 46;
         height: auto;
         margin-bottom: 1;
-    }
-    MissionsPanel {
-        width: 46;
-        height: auto;
-        margin-bottom: 1;
-    }
-    LogPanel {
-        width: 46;
-        height: auto;
     }
     """
     BINDINGS = [("q", "quit", "Quit")]
@@ -43,6 +35,7 @@ class ScriptRunnerApp(App):
         yield Header(show_clock=True)
         yield CorePanel()
         yield MissionsPanel()
+        yield AutomationsPanel()
         yield LogPanel()
         yield Footer()
 
@@ -55,20 +48,34 @@ class ScriptRunnerApp(App):
         core = self.query_one(CorePanel)
         missions_panel = self.query_one(MissionsPanel)
         log_panel = self.query_one(LogPanel)
+        automations_panel = self.query_one(AutomationsPanel)
 
         while True:
             try:
                 async with websockets.connect(WS_URL) as ws:
                     async for message in ws:
                         data = json.loads(message)
-                        if data.get("type") == "state":
+                        t = data.get("type")
+
+                        if t == "state":
                             core.cycles = data["cycles"]
                             core.entropy = data["entropy"]
                             core.synth = data["synth"]
                             core.tier = data["tier"]
                             core.uptime = data["uptime"]
                             core.cycle_multiplier = data["cycle_multiplier"]
+                            core.overclock_active = data.get("overclock_active", False)
+                            core.overclock_remaining = data.get("overclock_remaining", 0)
                             missions_panel.missions = data.get("missions", [])
                             log_panel.logs = data.get("logs", [])
+                            automations_panel.automations = data.get("automations", [])
+                            automations_panel.overclock_active = data.get("overclock_active", False)
+                            automations_panel.overclock_remaining = data.get("overclock_remaining", 0)
+
+                        elif t == "entropy_spike":
+                            # Flash the core panel briefly to signal the spike
+                            core.add_class("spike")
+                            await asyncio.sleep(0.5)
+                            core.remove_class("spike")
             except Exception:
                 await asyncio.sleep(2)
