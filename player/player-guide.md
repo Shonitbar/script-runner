@@ -5,21 +5,37 @@
 ---
 
 ## Setup
+### macOS / Linux
 
-**Terminal 1 — Start the server:**
 ```bash
-cd scriptrunner
+git clone <repo-url>
+cd script-runner
+python -m venv .venv
+source .venv/bin/activate
 pip install -e .
-scriptrunner start
-# Server runs at http://localhost:8000
 ```
 
-**Terminal 2 — Launch the TUI dashboard:**
+### Windows
+
 ```bash
-scriptrunner tui
+git clone <repo-url>
+cd script-runner
+python -m venv .venv
+.venv\Scripts\activate
+pip install -e .
 ```
 
-Keep both terminals visible. The dashboard updates live via WebSocket.
+`pip install -e .` installs all dependencies and registers the `scriptrunner` command.
+
+## Running the Game
+
+```bash
+scriptrunner start
+```
+
+This starts both the server (`http://localhost:8000`) and the TUI dashboard in one command.
+
+> If you want a server-only instance (e.g. to run scripts while the TUI is open elsewhere), use `scriptrunner server`.
 
 ---
 
