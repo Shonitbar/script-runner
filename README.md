@@ -2,6 +2,8 @@
 
 A terminal-native idle game where your scripts are the controller. Write code, hit an API, earn cycles. The server runs locally — you're the automation layer.
 
+<img width="536" height="935" alt="image" src="https://github.com/user-attachments/assets/6811b50b-37c0-4a28-8fb7-742f5357cd8c" />
+
 ## Setup
 
 **Requirements:** Python 3.11+
