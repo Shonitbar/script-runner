@@ -1,7 +1,7 @@
 """POST /compress — spend 100 cycles to reduce entropy by 20."""
 
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
@@ -34,7 +34,7 @@ def post_compress(session: Session = Depends(get_session)):
 
     state.cycles -= COMPRESS_COST
     state.entropy = max(0.0, state.entropy - COMPRESS_REDUCTION)
-    state.updated_at = datetime.utcnow()
+    state.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
 
     newly_completed = check_missions(state, session)
 
@@ -49,7 +49,7 @@ def post_compress(session: Session = Depends(get_session)):
     update_blob(state, "/compress")
     session.add(CallLog(
         endpoint="/compress", method="POST", status_code=200,
-        result_json=json.dumps(result), timestamp=datetime.utcnow()
+        result_json=json.dumps(result), timestamp=datetime.now(timezone.utc).replace(tzinfo=None)
     ))
     session.add(state)
     session.commit()

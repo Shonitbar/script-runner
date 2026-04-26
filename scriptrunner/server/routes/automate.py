@@ -1,7 +1,7 @@
 """POST /automate — register a named automation for passive +0.5 cycles/sec."""
 
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -39,7 +39,7 @@ def post_automate(body: AutomateRequest, session: Session = Depends(get_session)
     if existing:
         existing.active = True
         existing.interval_sec = body.interval_sec
-        existing.registered_at = datetime.utcnow()
+        existing.registered_at = datetime.now(timezone.utc).replace(tzinfo=None)
         session.add(existing)
         msg = f"automation '{body.name}' reactivated"
     else:
@@ -56,7 +56,7 @@ def post_automate(body: AutomateRequest, session: Session = Depends(get_session)
     session.add(state)
     session.add(CallLog(
         endpoint="/automate", method="POST", status_code=200,
-        result_json=json.dumps(result), timestamp=datetime.utcnow()
+        result_json=json.dumps(result), timestamp=datetime.now(timezone.utc).replace(tzinfo=None)
     ))
     session.commit()
     return result

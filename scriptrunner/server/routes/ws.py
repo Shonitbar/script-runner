@@ -39,8 +39,8 @@ async def websocket_endpoint(websocket: WebSocket):
                 if state:
                     overclock_remaining = 0
                     if state.overclock_active and state.overclock_ends_at:
-                        from datetime import datetime
-                        remaining = (state.overclock_ends_at - datetime.utcnow()).total_seconds()
+                        from datetime import datetime, timezone
+                        remaining = (state.overclock_ends_at - datetime.now(timezone.utc).replace(tzinfo=None)).total_seconds()
                         overclock_remaining = max(0, int(remaining))
                         if overclock_remaining == 0:
                             state.overclock_active = False

@@ -1,5 +1,5 @@
 """Unit tests for the mission_engine — no HTTP, pure logic."""
-from datetime import datetime
+from datetime import datetime, timezone
 
 import pytest
 from sqlmodel import Session, select
@@ -86,7 +86,7 @@ def test_patience_mission_completes_when_entropy_drops(db):
         db,
         mines_total=2,
         entropy=1.0,
-        patience_first_mine_at=datetime.utcnow(),
+        patience_first_mine_at=datetime.now(timezone.utc).replace(tzinfo=None),
     )
     assert "patience" in completed
 

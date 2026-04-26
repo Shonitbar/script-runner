@@ -1,6 +1,6 @@
 """Auto-checks and completes missions based on current game state."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List
 
 from sqlmodel import Session, select
@@ -15,10 +15,10 @@ def _complete(mission: Mission, state: GameState, session: Session, completed: L
     if mission.completed:
         return
     mission.completed = True
-    mission.completed_at = datetime.utcnow()
+    mission.completed_at = datetime.now(timezone.utc).replace(tzinfo=None)
     state.cycles += mission.reward_cycles * state.cycle_multiplier
     state.synth += mission.reward_synth
-    state.updated_at = datetime.utcnow()
+    state.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
     session.add(mission)
     completed.append(mission.slug)
 
@@ -26,7 +26,7 @@ def _complete(mission: Mission, state: GameState, session: Session, completed: L
 def _promote_tier(state: GameState, target: int) -> None:
     if state.tier < target:
         state.tier = target
-        state.updated_at = datetime.utcnow()
+        state.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
 
 
 def check_missions(state: GameState, session: Session) -> List[str]:
@@ -55,9 +55,9 @@ def check_missions(state: GameState, session: Session) -> List[str]:
         if "patience" in missions:
             m = missions["patience"]
             if state.patience_first_mine_at is None and state.mines_total >= 1:
-                state.patience_first_mine_at = datetime.utcnow()
+                state.patience_first_mine_at = datetime.now(timezone.utc).replace(tzinfo=None)
                 state.patience_first_entropy = state.entropy
-                state.updated_at = datetime.utcnow()
+                state.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
             elif (
                 state.patience_first_mine_at is not None
                 and state.entropy < 2.0
@@ -78,7 +78,7 @@ def check_missions(state: GameState, session: Session) -> List[str]:
             m = missions["the_compressor"]
             if state.entropy > 70:
                 state.compressor_saw_high = True
-                state.updated_at = datetime.utcnow()
+                state.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
             if state.compressor_saw_high and state.entropy < 30:
                 _complete(m, state, session, completed)
 

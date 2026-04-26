@@ -4,7 +4,7 @@ import asyncio
 import hashlib
 import json
 import random
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlmodel import Session, select
 
@@ -61,7 +61,7 @@ async def _decay_loop() -> None:
                     })
 
             if changed:
-                state.updated_at = datetime.utcnow()
+                state.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
                 session.add(state)
                 session.commit()
 
