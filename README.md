@@ -7,6 +7,7 @@
 **A terminal-native idle game where your scripts are the controller.**  
 Write code, hit an API, earn cycles. The server runs locally — you are the automation layer.
 
+[![Website](https://img.shields.io/badge/website-live-black?style=for-the-badge&logo=vercel)](https://script-runner-hazel.vercel.app/)
 [![Stars](https://img.shields.io/github/stars/Shonitbar/script-runner?style=for-the-badge&color=yellow)](https://github.com/Shonitbar/script-runner/stargazers)
 [![Forks](https://img.shields.io/github/forks/Shonitbar/script-runner?style=for-the-badge&color=blue)](https://github.com/Shonitbar/script-runner/network/members)
 [![License](https://img.shields.io/github/license/Shonitbar/script-runner?style=for-the-badge&color=green)](LICENSE)
@@ -107,6 +108,8 @@ See the [Player Guide](player/player-guide.md) for the full API reference, mecha
 
 <div align="center">
 
-Made with Python · MIT License · [Open an issue](https://github.com/Shonitbar/script-runner/issues)
+Made with Python · MIT License · [Website](https://script-runner-hazel.vercel.app/) · [Open an issue](https://github.com/Shonitbar/script-runner/issues)
+
+Created as a part of LLM course, HIT
 
 </div>
