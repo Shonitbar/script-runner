@@ -85,11 +85,15 @@ Starts both the API server (`http://localhost:8000`) and the TUI dashboard in on
 
 A starter script is included to get you up and running immediately:
 
-```bash
-python player/starter.py
+```python
+import requests, time
+
+session = requests.Session()
+r = session.post("http://localhost:8000/mine")
+print(r.json())
 ```
 
-From there, write your own scripts to mine cycles, manage entropy, complete missions, and progress through tiers.
+That's it — three lines to start earning cycles. From there, write your own scripts to mine cycles, manage entropy, complete missions, and progress through tiers.
 
 See the [Player Guide](player/player-guide.md) for the full API reference, mechanics, and mission walkthroughs.
 
