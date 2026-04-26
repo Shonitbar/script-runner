@@ -2,7 +2,7 @@
 
 import json
 import random
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -97,7 +97,7 @@ def post_pipeline(body: PipelineRequest, session: Session = Depends(get_session)
             })
             state.status_calls += 1
 
-    state.updated_at = datetime.utcnow()
+    state.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
     newly_completed = check_missions(state, session)
     all_completed.extend(newly_completed)
 
@@ -109,7 +109,7 @@ def post_pipeline(body: PipelineRequest, session: Session = Depends(get_session)
         ).first()
         if pe and not pe.completed:
             pe.completed = True
-            pe.completed_at = datetime.utcnow()
+            pe.completed_at = datetime.now(timezone.utc).replace(tzinfo=None)
             state.cycles += pe.reward_cycles * state.cycle_multiplier
             state.synth += pe.reward_synth
             session.add(pe)
@@ -126,7 +126,7 @@ def post_pipeline(body: PipelineRequest, session: Session = Depends(get_session)
     update_blob(state, "/pipeline")
     session.add(CallLog(
         endpoint="/pipeline", method="POST", status_code=200,
-        result_json=json.dumps(result_payload), timestamp=datetime.utcnow()
+        result_json=json.dumps(result_payload), timestamp=datetime.now(timezone.utc).replace(tzinfo=None)
     ))
     session.add(state)
     session.commit()

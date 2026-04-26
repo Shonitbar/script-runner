@@ -1,7 +1,7 @@
 import json
 import random
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
@@ -27,7 +27,7 @@ def _get_state(session: Session) -> GameState:
 
 def _track_scheduler(state: GameState) -> None:
     """Track timing for The Scheduler mission: mine every 2s ±200ms for 60s."""
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
     if not state.scheduler_active:
         state.scheduler_active = True
         state.scheduler_mines = 1
@@ -61,7 +61,7 @@ def _log_call(endpoint: str, method: str, status_code: int, result: dict, sessio
 def get_status(session: Session = Depends(get_session)):
     state = _get_state(session)
     state.status_calls += 1
-    state.updated_at = datetime.utcnow()
+    state.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
 
     newly_completed = check_missions(state, session)
 
@@ -121,7 +121,7 @@ def post_mine(session: Session = Depends(get_session)):
 
     # Track overclock mines for Overclock Runner mission
     if state.overclock_active and state.overclock_ends_at:
-        if datetime.utcnow() < state.overclock_ends_at:
+        if datetime.now(timezone.utc).replace(tzinfo=None) < state.overclock_ends_at:
             state.overclock_mines += 1
             gain *= 2  # doubled during overclock
         else:
@@ -133,7 +133,7 @@ def post_mine(session: Session = Depends(get_session)):
     if loss_event:
         state.cycles = max(0, state.cycles - 50)
         state.entropy = min(100, state.entropy + 0.5)
-        state.updated_at = datetime.utcnow()
+        state.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
         newly_completed = check_missions(state, session)
         result = {
             "cycles": round(state.cycles, 2),
@@ -151,7 +151,7 @@ def post_mine(session: Session = Depends(get_session)):
 
     state.cycles += gain
     state.entropy = min(100, state.entropy + 0.5)
-    state.updated_at = datetime.utcnow()
+    state.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
 
     newly_completed = check_missions(state, session)
 
@@ -180,15 +180,15 @@ def post_overclock(session: Session = Depends(get_session)):
     if state.tier < 3:
         raise HTTPException(status_code=403, detail="endpoint locked — reach Tier 3 first")
 
-    if state.overclock_active and state.overclock_ends_at and datetime.utcnow() < state.overclock_ends_at:
-        remaining = (state.overclock_ends_at - datetime.utcnow()).seconds
+    if state.overclock_active and state.overclock_ends_at and datetime.now(timezone.utc).replace(tzinfo=None) < state.overclock_ends_at:
+        remaining = (state.overclock_ends_at - datetime.now(timezone.utc).replace(tzinfo=None)).seconds
         raise HTTPException(status_code=400, detail=f"overclock already active — {remaining}s remaining")
 
     state.overclock_active = True
     state.overclock_mines = 0
-    state.overclock_ends_at = datetime.utcnow() + timedelta(seconds=30)
+    state.overclock_ends_at = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(seconds=30)
     state.entropy = min(100, state.entropy + 30)
-    state.updated_at = datetime.utcnow()
+    state.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
 
     result = {
         "message": "overclock active — mine yield doubled for 30 seconds",
@@ -214,7 +214,7 @@ def post_exploit(session: Session = Depends(get_session)):
     if success:
         gain = 500.0 * state.cycle_multiplier
         state.cycles += gain
-        state.updated_at = datetime.utcnow()
+        state.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
         result = {
             "outcome": "success",
             "gained": round(gain, 2),
@@ -223,7 +223,7 @@ def post_exploit(session: Session = Depends(get_session)):
         }
     else:
         state.entropy = min(100, state.entropy + 40)
-        state.updated_at = datetime.utcnow()
+        state.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
         result = {
             "outcome": "failure",
             "entropy": round(state.entropy, 2),

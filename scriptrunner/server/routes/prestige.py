@@ -1,7 +1,7 @@
 """POST /prestige — Reset Protocol. Requires 5 Synth."""
 
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
@@ -61,7 +61,7 @@ def post_prestige(session: Session = Depends(get_session)):
     state.blob_endpoints_seen = "[]"
     state.blob_dna_seed = -1
     state.blob_call_sequence = "[]"
-    state.updated_at = datetime.utcnow()
+    state.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
 
     # Reset all missions
     missions = session.exec(select(Mission)).all()
@@ -87,7 +87,7 @@ def post_prestige(session: Session = Depends(get_session)):
     update_blob(state, "/prestige")
     session.add(CallLog(
         endpoint="/prestige", method="POST", status_code=200,
-        result_json=json.dumps(result), timestamp=datetime.utcnow()
+        result_json=json.dumps(result), timestamp=datetime.now(timezone.utc).replace(tzinfo=None)
     ))
     session.add(state)
     session.commit()

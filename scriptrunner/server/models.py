@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 from sqlmodel import Field, SQLModel
@@ -42,8 +42,8 @@ class GameState(SQLModel, table=True):
     dark_ops_unlocked: bool = Field(default=False)
     # Dark ops: HMAC key shards collected (bitmask 0b11111 = all 5)
     hmac_shards: int = Field(default=0)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
 
 
 class CallLog(SQLModel, table=True):
@@ -52,14 +52,14 @@ class CallLog(SQLModel, table=True):
     method: str = Field(default="POST")
     status_code: int
     result_json: str
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
 
 
 class Automation(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     name: str = Field(unique=True, index=True)
     interval_sec: int = Field(default=10)
-    registered_at: datetime = Field(default_factory=datetime.utcnow)
+    registered_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
     active: bool = Field(default=True)
 
 

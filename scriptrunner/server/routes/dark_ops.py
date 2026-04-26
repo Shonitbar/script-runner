@@ -5,7 +5,7 @@ import hmac
 import json
 import random
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -89,7 +89,7 @@ def get_hint(shard_id: int, session: Session = Depends(get_session)):
     bit = 1 << (shard_id - 1)
     if not (state.hmac_shards & bit):
         state.hmac_shards |= bit
-        state.updated_at = datetime.utcnow()
+        state.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
         session.add(state)
         session.commit()
 
@@ -120,7 +120,7 @@ def post_spoof(body: SpoofRequest, session: Session = Depends(get_session)):
     if not hmac.compare_digest(expected, body.signature.lower()):
         # Penalty: entropy spike
         state.entropy = min(100, state.entropy + 20)
-        state.updated_at = datetime.utcnow()
+        state.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
         session.add(state)
         session.commit()
         raise HTTPException(
@@ -130,7 +130,7 @@ def post_spoof(body: SpoofRequest, session: Session = Depends(get_session)):
 
     gain = 200.0 * state.cycle_multiplier
     state.cycles += gain
-    state.updated_at = datetime.utcnow()
+    state.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
 
     result = {
         "outcome": "spoof accepted",
@@ -141,7 +141,7 @@ def post_spoof(body: SpoofRequest, session: Session = Depends(get_session)):
     update_blob(state, "/dark-ops/spoof")
     session.add(CallLog(
         endpoint="/dark-ops/spoof", method="POST", status_code=200,
-        result_json=json.dumps(result), timestamp=datetime.utcnow()
+        result_json=json.dumps(result), timestamp=datetime.now(timezone.utc).replace(tzinfo=None)
     ))
     session.add(state)
     session.commit()
@@ -159,7 +159,7 @@ def post_inject(session: Session = Depends(get_session)):
         # Critical failure
         state.entropy = min(100, state.entropy + 50)
         state.cycles = max(0, state.cycles - 200)
-        state.updated_at = datetime.utcnow()
+        state.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
         result = {
             "outcome": "critical_failure",
             "entropy": round(state.entropy, 2),
@@ -170,7 +170,7 @@ def post_inject(session: Session = Depends(get_session)):
         gain = 100.0 * state.cycle_multiplier
         state.cycles += gain
         state.entropy = min(100, state.entropy + 15)
-        state.updated_at = datetime.utcnow()
+        state.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
         result = {
             "outcome": "partial_success",
             "gained": round(gain, 2),
@@ -181,7 +181,7 @@ def post_inject(session: Session = Depends(get_session)):
         # Full success
         gain = 400.0 * state.cycle_multiplier
         state.cycles += gain
-        state.updated_at = datetime.utcnow()
+        state.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
         result = {
             "outcome": "success",
             "gained": round(gain, 2),
@@ -192,7 +192,7 @@ def post_inject(session: Session = Depends(get_session)):
     update_blob(state, "/dark-ops/inject")
     session.add(CallLog(
         endpoint="/dark-ops/inject", method="POST", status_code=200,
-        result_json=json.dumps(result), timestamp=datetime.utcnow()
+        result_json=json.dumps(result), timestamp=datetime.now(timezone.utc).replace(tzinfo=None)
     ))
     session.add(state)
     session.commit()
@@ -230,7 +230,7 @@ def post_finalize(body: FinalizeRequest, session: Session = Depends(get_session)
 
     if not hmac.compare_digest(expected, body.signature.lower()):
         state.entropy = min(100, state.entropy + 30)
-        state.updated_at = datetime.utcnow()
+        state.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
         session.add(state)
         session.commit()
         raise HTTPException(status_code=401, detail="invalid signature — entropy +30")
@@ -239,7 +239,7 @@ def post_finalize(body: FinalizeRequest, session: Session = Depends(get_session)
     gain = 99999.0 * state.cycle_multiplier
     state.cycles += gain
     state.synth += 10
-    state.updated_at = datetime.utcnow()
+    state.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
 
     result = {
         "outcome": "CLASSIFIED",
@@ -253,7 +253,7 @@ def post_finalize(body: FinalizeRequest, session: Session = Depends(get_session)
     update_blob(state, "/dark-ops/finalize")
     session.add(CallLog(
         endpoint="/dark-ops/finalize", method="POST", status_code=200,
-        result_json=json.dumps(result), timestamp=datetime.utcnow()
+        result_json=json.dumps(result), timestamp=datetime.now(timezone.utc).replace(tzinfo=None)
     ))
     session.add(state)
     session.commit()
