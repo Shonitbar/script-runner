@@ -8,6 +8,7 @@ from sqlmodel import Session, select
 
 from scriptrunner.server.db import get_session
 from scriptrunner.server.models import Automation, CallLog, GameState, Mission
+from scriptrunner.server.state import update_blob
 
 router = APIRouter()
 
@@ -55,6 +56,11 @@ def post_prestige(session: Session = Depends(get_session)):
     state.overclock_mines = 0
     state.overclock_ends_at = None
     state.passive_ticks = 0
+    # Reset blob companion
+    state.blob_requests_total = 0
+    state.blob_endpoints_seen = "[]"
+    state.blob_dna_seed = -1
+    state.blob_call_sequence = "[]"
     state.updated_at = datetime.utcnow()
 
     # Reset all missions
@@ -78,6 +84,7 @@ def post_prestige(session: Session = Depends(get_session)):
         "note": "All cycles and missions reset. Multiplier and dark ops carry over.",
     }
 
+    update_blob(state, "/prestige")
     session.add(CallLog(
         endpoint="/prestige", method="POST", status_code=200,
         result_json=json.dumps(result), timestamp=datetime.utcnow()

@@ -84,6 +84,11 @@ async def websocket_endpoint(websocket: WebSocket):
                             {"name": a.name, "interval_sec": a.interval_sec}
                             for a in automations
                         ],
+                        "blob": {
+                            "total_requests": state.blob_requests_total,
+                            "endpoints_seen": json.loads(state.blob_endpoints_seen),
+                            "dna_seed": state.blob_dna_seed,
+                        },
                     }
                     await websocket.send_text(json.dumps(payload))
             await asyncio.sleep(1.0)

@@ -14,6 +14,7 @@ from sqlmodel import Session, select
 
 from scriptrunner.server.db import get_session
 from scriptrunner.server.models import CallLog, GameState
+from scriptrunner.server.state import update_blob
 
 router = APIRouter(prefix="/dark-ops")
 
@@ -137,6 +138,7 @@ def post_spoof(body: SpoofRequest, session: Session = Depends(get_session)):
         "cycles": round(state.cycles, 2),
         "message": "the machine believed you",
     }
+    update_blob(state, "/dark-ops/spoof")
     session.add(CallLog(
         endpoint="/dark-ops/spoof", method="POST", status_code=200,
         result_json=json.dumps(result), timestamp=datetime.utcnow()
@@ -187,6 +189,7 @@ def post_inject(session: Session = Depends(get_session)):
             "message": "injection accepted — ghost automation registered",
         }
 
+    update_blob(state, "/dark-ops/inject")
     session.add(CallLog(
         endpoint="/dark-ops/inject", method="POST", status_code=200,
         result_json=json.dumps(result), timestamp=datetime.utcnow()
@@ -247,6 +250,7 @@ def post_finalize(body: FinalizeRequest, session: Session = Depends(get_session)
         "secret": "the key was the name of the game all along",
     }
 
+    update_blob(state, "/dark-ops/finalize")
     session.add(CallLog(
         endpoint="/dark-ops/finalize", method="POST", status_code=200,
         result_json=json.dumps(result), timestamp=datetime.utcnow()

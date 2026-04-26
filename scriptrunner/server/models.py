@@ -32,6 +32,11 @@ class GameState(SQLModel, table=True):
     overclock_ends_at: Optional[datetime] = Field(default=None)
     # Passive income tick counter (for Full Auto mission)
     passive_ticks: int = Field(default=0)
+    # Blob companion state
+    blob_requests_total: int = Field(default=0)
+    blob_endpoints_seen: str = Field(default="[]")   # JSON-encoded list of unique endpoint strings
+    blob_dna_seed: int = Field(default=-1)            # -1 = not yet generated; locked after first 8 calls
+    blob_call_sequence: str = Field(default="[]")     # JSON list of first 8 endpoints (for seed derivation)
     # Prestige
     prestige_count: int = Field(default=0)
     dark_ops_unlocked: bool = Field(default=False)

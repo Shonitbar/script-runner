@@ -12,6 +12,7 @@ from sqlmodel import Session, select
 from scriptrunner.server.db import get_session
 from scriptrunner.server.models import CallLog, GameState, Mission
 from scriptrunner.server.mission_engine import check_missions
+from scriptrunner.server.state import update_blob
 
 router = APIRouter()
 
@@ -122,6 +123,7 @@ def post_pipeline(body: PipelineRequest, session: Session = Depends(get_session)
     if all_completed:
         result_payload["missions_completed"] = all_completed
 
+    update_blob(state, "/pipeline")
     session.add(CallLog(
         endpoint="/pipeline", method="POST", status_code=200,
         result_json=json.dumps(result_payload), timestamp=datetime.utcnow()

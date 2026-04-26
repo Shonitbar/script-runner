@@ -10,6 +10,7 @@ from sqlmodel import Session, select
 
 from scriptrunner.server.db import get_session
 from scriptrunner.server.models import Automation, CallLog, GameState
+from scriptrunner.server.state import update_blob
 
 router = APIRouter()
 
@@ -51,6 +52,8 @@ def post_automate(body: AutomateRequest, session: Session = Depends(get_session)
         "passive_rate": "+0.5 cycles/sec",
         "message": msg,
     }
+    update_blob(state, "/automate")
+    session.add(state)
     session.add(CallLog(
         endpoint="/automate", method="POST", status_code=200,
         result_json=json.dumps(result), timestamp=datetime.utcnow()
