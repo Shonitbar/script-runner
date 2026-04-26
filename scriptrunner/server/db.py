@@ -71,8 +71,27 @@ _MISSIONS = [
 ]
 
 
+def _migrate_blob_columns() -> None:
+    """Add blob companion columns to existing databases that predate this feature."""
+    from sqlalchemy import text
+    migrations = [
+        ("blob_requests_total", "INTEGER DEFAULT 0"),
+        ("blob_endpoints_seen", "TEXT DEFAULT '[]'"),
+        ("blob_dna_seed", "INTEGER DEFAULT -1"),
+        ("blob_call_sequence", "TEXT DEFAULT '[]'"),
+    ]
+    with engine.connect() as conn:
+        for col_name, col_def in migrations:
+            try:
+                conn.execute(text(f"ALTER TABLE gamestate ADD COLUMN {col_name} {col_def}"))
+                conn.commit()
+            except Exception:
+                pass  # Column already exists
+
+
 def init_db() -> None:
     SQLModel.metadata.create_all(engine)
+    _migrate_blob_columns()
 
     from scriptrunner.server.models import GameState, Mission
     with Session(engine) as session:

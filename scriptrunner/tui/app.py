@@ -7,6 +7,7 @@ from textual.app import App, ComposeResult
 from textual.widgets import Footer, Header
 
 from scriptrunner.tui.widgets.automations_panel import AutomationsPanel
+from scriptrunner.tui.widgets.blob_panel import BlobPanel
 from scriptrunner.tui.widgets.core_panel import CorePanel
 from scriptrunner.tui.widgets.entropy_gauge import EntropyGauge
 from scriptrunner.tui.widgets.log_panel import LogPanel
@@ -24,7 +25,7 @@ class ScriptRunnerApp(App):
         align: center top;
         padding: 1;
     }
-    CorePanel, MissionsPanel, LogPanel, AutomationsPanel, EntropyGauge {
+    CorePanel, MissionsPanel, LogPanel, AutomationsPanel, EntropyGauge, BlobPanel {
         width: 46;
         height: auto;
         margin-bottom: 1;
@@ -34,6 +35,7 @@ class ScriptRunnerApp(App):
 
     def compose(self) -> ComposeResult:
         yield Header(show_clock=True)
+        yield BlobPanel()
         yield CorePanel()
         yield EntropyGauge()
         yield MissionsPanel()
@@ -47,6 +49,7 @@ class ScriptRunnerApp(App):
     async def _connect_ws(self) -> None:
         import websockets
 
+        blob_panel = self.query_one(BlobPanel)
         core = self.query_one(CorePanel)
         gauge = self.query_one(EntropyGauge)
         missions_panel = self.query_one(MissionsPanel)
@@ -61,6 +64,11 @@ class ScriptRunnerApp(App):
                         t = data.get("type")
 
                         if t == "state":
+                            blob = data.get("blob", {})
+                            blob_panel.total_requests = blob.get("total_requests", 0)
+                            blob_panel.endpoints_seen = blob.get("endpoints_seen", [])
+                            blob_panel.dna_seed = blob.get("dna_seed", -1)
+                            blob_panel.entropy = data["entropy"]
                             core.cycles = data["cycles"]
                             core.entropy = data["entropy"]
                             core.synth = data["synth"]

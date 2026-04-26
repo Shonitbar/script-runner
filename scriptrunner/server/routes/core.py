@@ -9,6 +9,7 @@ from sqlmodel import Session, select
 from scriptrunner.server.db import get_session, engine
 from scriptrunner.server.models import CallLog, GameState
 from scriptrunner.server.mission_engine import check_missions
+from scriptrunner.server.state import update_blob
 
 router = APIRouter()
 
@@ -76,6 +77,7 @@ def get_status(session: Session = Depends(get_session)):
     if newly_completed:
         result["missions_completed"] = newly_completed
 
+    update_blob(state, "/status")
     _log_call("/status", "GET", 200, result, session)
     session.commit()
     return result
@@ -141,6 +143,7 @@ def post_mine(session: Session = Depends(get_session)):
         }
         if newly_completed:
             result["missions_completed"] = newly_completed
+        update_blob(state, "/mine")
         _log_call("/mine", "POST", 200, result, session)
         session.add(state)
         session.commit()
@@ -163,6 +166,7 @@ def post_mine(session: Session = Depends(get_session)):
     if newly_completed:
         result["missions_completed"] = newly_completed
 
+    update_blob(state, "/mine")
     _log_call("/mine", "POST", 200, result, session)
     session.add(state)
     session.commit()
@@ -191,6 +195,7 @@ def post_overclock(session: Session = Depends(get_session)):
         "entropy": round(state.entropy, 2),
         "overclock_ends_at": state.overclock_ends_at.isoformat(),
     }
+    update_blob(state, "/overclock")
     _log_call("/overclock", "POST", 200, result, session)
     session.add(state)
     session.commit()
@@ -229,6 +234,7 @@ def post_exploit(session: Session = Depends(get_session)):
     if newly_completed:
         result["missions_completed"] = newly_completed
 
+    update_blob(state, "/exploit")
     _log_call("/exploit", "POST", 200, result, session)
     session.add(state)
     session.commit()

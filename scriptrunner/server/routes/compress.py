@@ -9,6 +9,7 @@ from sqlmodel import Session, select
 from scriptrunner.server.db import get_session
 from scriptrunner.server.models import CallLog, GameState
 from scriptrunner.server.mission_engine import check_missions
+from scriptrunner.server.state import update_blob
 
 router = APIRouter()
 
@@ -45,6 +46,7 @@ def post_compress(session: Session = Depends(get_session)):
     if newly_completed:
         result["missions_completed"] = newly_completed
 
+    update_blob(state, "/compress")
     session.add(CallLog(
         endpoint="/compress", method="POST", status_code=200,
         result_json=json.dumps(result), timestamp=datetime.utcnow()
