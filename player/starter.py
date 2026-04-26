@@ -1,5 +1,5 @@
 import requests
 
 session = requests.Session()
-r = session.get("http://localhost:8000/mine")
+r = session.post("http://localhost:8000/mine")
 print(r.json())

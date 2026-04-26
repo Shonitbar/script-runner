@@ -7,6 +7,9 @@ reports/
 # Claude
 .claude/
 
+# Agent docs
+agents/
+
 # Obsidian vault
 script-runner-brain/
 
@@ -34,4 +37,4 @@ Thumbs.db
 *.swp
 
 #starter.py
-starter.py
+/player/starter.py
