@@ -8,7 +8,7 @@
 ### macOS / Linux
 
 ```bash
-git clone <repo-url>
+git clone https://github.com/Shonitbar/script-runner.git
 cd script-runner
 python -m venv .venv
 source .venv/bin/activate
@@ -18,7 +18,7 @@ pip install -e .
 ### Windows
 
 ```bash
-git clone <repo-url>
+git clone https://github.com/Shonitbar/script-runner.git
 cd script-runner
 python -m venv .venv
 .venv\Scripts\activate
@@ -36,6 +36,18 @@ scriptrunner start
 This starts both the server (`http://localhost:8000`) and the TUI dashboard in one command.
 
 > If you want a server-only instance (e.g. to run scripts while the TUI is open elsewhere), use `scriptrunner server`.
+
+---
+
+## A Note on HTTP Sessions
+
+All examples use `requests.Session()` rather than bare `requests.get/post`. Sessions reuse the underlying TCP connection — faster round-trips, fewer dropped calls, especially during tight mining loops.
+
+```python
+import requests
+session = requests.Session()
+# use session.get(...) and session.post(...) throughout
+```
 
 ---
 
@@ -60,7 +72,7 @@ This is the core mechanic. Entropy changes what mining earns and what it risks.
 | Danger | `70 – 90` | +5 cycles | 10% chance to lose 50 cycles |
 | Critical | `> 90` | Mining disabled | Must compress or wait |
 
-**Entropy decay:** -0.1/sec while idle (no mining).
+**Entropy decay:** -0.1/sec while idle (no mining).  
 **Each mine call:** +0.5 entropy.
 
 ---
@@ -95,10 +107,10 @@ All endpoints are at `http://localhost:8000`.
 ## Tier Progression
 
 ```
-Tier 0 → Tier 1: immediate (after First Contact)
-Tier 1 → Tier 2: 500 cycles
-Tier 2 → Tier 3: 5,000 cycles
-Tier 3 → Prestige: 5 Synth
+Tier 0 → Tier 1:  immediate (after First Contact)
+Tier 1 → Tier 2:  complete Grinder (500 cycles total)
+Tier 2 → Tier 3:  complete Scaler (5,000 cycles total)
+Tier 3 → Prestige: complete Titan (50,000 cycles) → earn 5 Synth → call /prestige
 ```
 
 ---
@@ -109,7 +121,7 @@ Tier 3 → Prestige: 5 Synth
 
 The game provides `starter.py`. Run it:
 ```bash
-python starter.py
+python player/starter.py
 ```
 
 Expected response:
@@ -135,12 +147,12 @@ You have access to `/mine`, `/status`, `/status/history`.
 **Ten in a Row**
 - Mine 10 times total.
 - Reward: +50 cycles.
-- Script example:
 ```python
 import requests, time
 
+session = requests.Session()
 for _ in range(10):
-    r = requests.post("http://localhost:8000/mine")
+    r = session.post("http://localhost:8000/mine")
     print(r.json())
     time.sleep(1.1)  # respect the 1s cooldown
 ```
@@ -151,8 +163,9 @@ for _ in range(10):
 ```python
 import requests, time
 
+session = requests.Session()
 for _ in range(20):
-    r = requests.get("http://localhost:8000/status")
+    r = session.get("http://localhost:8000/status")
     data = r.json()
     print(f"entropy: {data['entropy']}")
     time.sleep(0.5)
@@ -165,24 +178,25 @@ for _ in range(20):
 ```python
 import requests, time
 
-requests.post("http://localhost:8000/mine")
+session = requests.Session()
+session.post("http://localhost:8000/mine")
 print("waiting for entropy to drop...")
 
 while True:
-    r = requests.get("http://localhost:8000/status")
+    r = session.get("http://localhost:8000/status")
     e = r.json()["entropy"]
     print(f"entropy: {e}")
     if e < 2.0:
         break
     time.sleep(1)
 
-r = requests.post("http://localhost:8000/mine")
+r = session.post("http://localhost:8000/mine")
 print(r.json())
 ```
 
 **Grinder** *(Tier unlock)*
 - Accumulate 500 cycles total.
-- Reward: Tier 2 unlocked + 1 free Synth.
+- Reward: Tier 2 unlocked + 1 Synth.
 - *Just keep mining. Loop with a 1.1s sleep to stay off the cooldown.*
 
 ---
@@ -195,18 +209,26 @@ New endpoints: `/automate`, `/missions`, `/compress`.
 
 **Automations** — Register a named task. Server awards +0.5 cycles/sec passively while it's active.
 ```python
-requests.post("http://localhost:8000/automate", json={"name": "my-bot", "interval_sec": 5})
+import requests
+
+session = requests.Session()
+session.post("http://localhost:8000/automate", json={"name": "my-bot", "interval_sec": 5})
 ```
 
 **Compress** — Costs 100 cycles, reduces entropy by 20. Your pressure-relief valve.
 ```python
-requests.post("http://localhost:8000/compress")
+import requests
+
+session = requests.Session()
+session.post("http://localhost:8000/compress")
 ```
 
 **Missions via API** — Fetch missions as JSON and script against them.
 ```python
 import requests
-missions = requests.get("http://localhost:8000/missions").json()
+
+session = requests.Session()
+missions = session.get("http://localhost:8000/missions").json()
 for m in missions:
     print(f"[{'X' if m['completed'] else ' '}] {m['name']} — {m['reward_cycles']}cy")
 ```
@@ -220,9 +242,10 @@ for m in missions:
 ```python
 import requests, time
 
+session = requests.Session()
 count = 0
 while count < 50:
-    r = requests.post("http://localhost:8000/mine")
+    r = session.post("http://localhost:8000/mine")
     if r.status_code == 429:
         time.sleep(1.1)
         continue
@@ -240,32 +263,29 @@ print(f"Done — mined {count} times")
 ```python
 import requests, time
 
+session = requests.Session()
+
 # Mine until danger zone
 while True:
-    status = requests.get("http://localhost:8000/status").json()
+    status = session.get("http://localhost:8000/status").json()
     if status["entropy"] > 70:
         break
-    requests.post("http://localhost:8000/mine")
+    session.post("http://localhost:8000/mine")
     time.sleep(1.1)
 
 print("Danger zone reached. Compressing...")
 
 # Compress down below 30
 while True:
-    status = requests.get("http://localhost:8000/status").json()
+    status = session.get("http://localhost:8000/status").json()
     if status["entropy"] < 30:
         break
     if status["cycles"] >= 100:
-        r = requests.post("http://localhost:8000/compress")
+        r = session.post("http://localhost:8000/compress")
         print(r.json())
     else:
-        time.sleep(5)  # wait for passive income or manual mines
+        time.sleep(5)
 ```
-
-**Mission Control**
-- Write a script that fetches `/missions`, picks the highest-reward uncompleted one, and attempts it.
-- Reward: +500 cycles + "AUTONOMOUS" badge on dashboard.
-- *Design is up to you. The mechanic is that you're querying the game's own mission list to decide what to do.*
 
 **Danger Zone**
 - Mine 5 times while entropy > 70.
@@ -274,35 +294,56 @@ while True:
 ```python
 import requests, time
 
-# First get entropy into danger zone
+session = requests.Session()
+
+# Get entropy into danger zone first
 while True:
-    status = requests.get("http://localhost:8000/status").json()
+    status = session.get("http://localhost:8000/status").json()
     if status["entropy"] >= 70:
         break
-    requests.post("http://localhost:8000/mine")
+    session.post("http://localhost:8000/mine")
     time.sleep(1.1)
 
 print("In danger zone. Running 5 mines...")
 for _ in range(5):
-    r = requests.post("http://localhost:8000/mine")
+    r = session.post("http://localhost:8000/mine")
     print(r.json())
     time.sleep(1.1)
 ```
 
 **The Scheduler** *(Tier unlock preview)*
 - Mine exactly once every 2 seconds for 60 seconds (±200ms tolerance).
-- Reward: +400 cycles + unlocks `/overclock` preview.
-- *The server measures intervals. Wrong interval = failed. Too long a gap (>5s) = reset. Wrong timing = disqualified.*
+- Reward: +400 cycles.
+- *The server measures intervals. Wrong interval = failed. Too long a gap (>5s) = reset.*
 ```python
 import requests, time
 
+session = requests.Session()
 print("Starting scheduler — 30 mines at 2s intervals...")
 for i in range(30):
-    r = requests.post("http://localhost:8000/mine")
+    r = session.post("http://localhost:8000/mine")
     print(f"[{i+1}/30] {r.json()}")
     time.sleep(2.0)
 
 print("Done!")
+```
+
+**Scaler** *(Tier unlock)*
+- Accumulate 5,000 cycles total.
+- Reward: Tier 3 unlocked + 1 Synth.
+- *Keep your loop running. Compress when entropy climbs to stay in the higher-yield zones.*
+```python
+import requests, time
+
+session = requests.Session()
+while True:
+    status = session.get("http://localhost:8000/status").json()
+    print(f"cycles={status['cycles']:.0f} entropy={status['entropy']:.1f}")
+    if status["entropy"] > 75 and status["cycles"] >= 100:
+        session.post("http://localhost:8000/compress")
+    elif status["entropy"] < 90:
+        session.post("http://localhost:8000/mine")
+    time.sleep(1.1)
 ```
 
 ---
@@ -317,7 +358,8 @@ New endpoints: `/pipeline`, `/overclock`, `/exploit`.
 ```python
 import requests
 
-r = requests.post("http://localhost:8000/pipeline", json={
+session = requests.Session()
+r = session.post("http://localhost:8000/pipeline", json={
     "ops": [
         {"op": "mine"}, {"op": "mine"}, {"op": "mine"},
         {"op": "compress"},
@@ -350,7 +392,8 @@ asyncio.run(listen())
 ```python
 import requests
 
-r = requests.post("http://localhost:8000/pipeline", json={
+session = requests.Session()
+r = session.post("http://localhost:8000/pipeline", json={
     "ops": [
         {"op": "mine"}, {"op": "mine"}, {"op": "mine"},
         {"op": "compress"},
@@ -360,24 +403,6 @@ r = requests.post("http://localhost:8000/pipeline", json={
 print(r.json())
 ```
 
-**The Listener**
-- Connect to WebSocket. React to an `entropy_spike` event by calling `/compress` within 3 seconds.
-- Reward: +1 Synth + "REACTIVE" badge.
-```python
-import asyncio, websockets, requests, json
-
-async def listen():
-    async with websockets.connect("ws://localhost:8000/ws") as ws:
-        async for msg in ws:
-            data = json.loads(msg)
-            if data.get("type") == "entropy_spike":
-                print("Spike detected! Compressing...")
-                requests.post("http://localhost:8000/compress")
-                break
-
-asyncio.run(listen())
-```
-
 **Overclock Runner**
 - Call `POST /overclock`, then mine as many times as possible in 30 seconds.
 - Reward: +3,000 cycles if you get >25 mines in the window.
@@ -385,14 +410,15 @@ asyncio.run(listen())
 ```python
 import requests, time
 
-r = requests.post("http://localhost:8000/overclock")
+session = requests.Session()
+r = session.post("http://localhost:8000/overclock")
 print(r.json())
 
 print("Mining hard for 30 seconds...")
 start = time.time()
 count = 0
 while time.time() - start < 30:
-    r = requests.post("http://localhost:8000/mine")
+    r = session.post("http://localhost:8000/mine")
     if r.status_code != 429:
         count += 1
         print(f"[{count}] {r.json()}")
@@ -402,57 +428,73 @@ print(f"Total mines: {count}")
 ```
 
 **Full Auto**
-- Build a script that runs indefinitely:
-  - Monitors `/status` every 5s
-  - Mines when entropy < 60
-  - Compresses when entropy > 75
-  - Pauses when entropy > 90
-- Run it unattended for 10 minutes.
+- Register an automation via `POST /automate` and keep it running for 10 minutes (600 passive ticks).
 - Reward: +5,000 cycles + 2 Synth.
+- *The server counts passive ticks from active automations — one per second per registered bot. You don't need to babysit it, just make sure the server stays up.*
 ```python
 import requests, time
 
-def run():
-    while True:
-        status = requests.get("http://localhost:8000/status").json()
-        e = status["entropy"]
-        c = status["cycles"]
-        print(f"cycles={c:.1f} entropy={e:.1f}")
+session = requests.Session()
 
-        if e > 90:
-            print("Critical — pausing...")
-            time.sleep(5)
-        elif e > 75 and c >= 100:
-            print("Compressing...")
-            requests.post("http://localhost:8000/compress")
-        elif e < 60:
-            r = requests.post("http://localhost:8000/mine")
-            if r.status_code != 429:
-                print(f"Mined: {r.json()}")
-            time.sleep(1.1)
-            continue
+# Register the automation
+r = session.post("http://localhost:8000/automate", json={"name": "full-auto", "interval_sec": 1})
+print(r.json())
 
+print("Automation registered. Running for 10 minutes...")
+start = time.time()
+while time.time() - start < 620:
+    status = session.get("http://localhost:8000/status").json()
+    print(f"cycles={status['cycles']:.0f} entropy={status['entropy']:.1f}")
+    time.sleep(30)
+
+print("Done — check mission completion.")
+```
+
+**Titan** *(Prestige unlock)*
+- Accumulate 50,000 cycles total.
+- Reward: 5 Synth — enough to trigger prestige.
+- *This is the long grind. Use automations, pipelines, and overclock windows together.*
+```python
+import requests, time
+
+session = requests.Session()
+while True:
+    status = session.get("http://localhost:8000/status").json()
+    cycles = status["cycles"]
+    entropy = status["entropy"]
+    print(f"cycles={cycles:.0f}/50000 entropy={entropy:.1f}")
+
+    if entropy >= 90:
         time.sleep(5)
-
-run()
+    elif entropy > 75 and cycles >= 100:
+        session.post("http://localhost:8000/compress")
+    else:
+        r = session.post("http://localhost:8000/mine")
+        if r.status_code != 429:
+            print(r.json())
+    time.sleep(1.1)
 ```
 
 ---
 
 ## Prestige — Reset Protocol
 
-**Trigger:** Collect 5 Synth (`◈`), then call `POST /prestige`.
+**Trigger:** Complete Titan to earn 5 Synth (`◈`), then call `POST /prestige`.
 
 Check your status first:
 ```python
 import requests
-print(requests.get("http://localhost:8000/prestige/status").json())
+
+session = requests.Session()
+print(session.get("http://localhost:8000/prestige/status").json())
 ```
 
 When ready:
 ```python
 import requests
-r = requests.post("http://localhost:8000/prestige")
+
+session = requests.Session()
+r = session.post("http://localhost:8000/prestige")
 print(r.json())
 ```
 
@@ -460,6 +502,7 @@ print(r.json())
 - Cycles → 0
 - Tier → 0
 - All missions reset
+- ENTITY companion resets (new DNA on your next 8 calls)
 
 ### What carries over
 - **Cycle multiplier ×1.5** (stacks each prestige)
@@ -474,7 +517,9 @@ Dark Ops is a puzzle layer. You need to collect 5 HMAC key shards, reconstruct a
 ### Step 1 — Read the manifest
 ```python
 import requests
-r = requests.get("http://localhost:8000/dark-ops/manifest")
+
+session = requests.Session()
+r = session.get("http://localhost:8000/dark-ops/manifest")
 print(r.json()["manifest"])
 ```
 
@@ -482,9 +527,10 @@ print(r.json()["manifest"])
 ```python
 import requests
 
+session = requests.Session()
 key = ""
 for i in range(1, 6):
-    r = requests.get(f"http://localhost:8000/dark-ops/hint/{i}")
+    r = session.get(f"http://localhost:8000/dark-ops/hint/{i}")
     data = r.json()
     key += data["fragment"]
     print(f"Shard {i}: {data['fragment']} — collected {data['shards_collected']}/5")
@@ -498,6 +544,7 @@ Once you have all 5 shards and know the key, sign and submit:
 ```python
 import requests, hmac, hashlib, json, time
 
+session = requests.Session()
 key = b"<reconstructed_key>"  # fill in after collecting shards
 ts = int(time.time())
 agent = "your_name"
@@ -506,7 +553,7 @@ payload = {"timestamp": ts, "agent": agent}
 payload_bytes = json.dumps(payload, separators=(",", ":"), sort_keys=True).encode()
 sig = hmac.new(key, payload_bytes, hashlib.sha256).hexdigest()
 
-r = requests.post("http://localhost:8000/dark-ops/finalize", json={
+r = session.post("http://localhost:8000/dark-ops/finalize", json={
     "timestamp": ts,
     "agent": agent,
     "signature": sig,
@@ -522,12 +569,13 @@ print(r.json())
 ```python
 import requests, hmac, hashlib, json
 
+session = requests.Session()
 key = b"<key>"
 payload = {"action": "mine", "amount": 1}
 payload_bytes = json.dumps(payload, separators=(",", ":"), sort_keys=True).encode()
 sig = hmac.new(key, payload_bytes, hashlib.sha256).hexdigest()
 
-r = requests.post("http://localhost:8000/dark-ops/spoof", json={
+r = session.post("http://localhost:8000/dark-ops/spoof", json={
     "payload": payload,
     "signature": sig,
 })
@@ -541,7 +589,9 @@ print(r.json())
 
 ```python
 import requests
-r = requests.post("http://localhost:8000/dark-ops/inject")
+
+session = requests.Session()
+r = session.post("http://localhost:8000/dark-ops/inject")
 print(r.json())
 ```
 
@@ -566,9 +616,59 @@ Payload shape:
   "dark_ops_unlocked": false,
   "missions": [...],
   "logs": [...],
-  "automations": [...]
+  "automations": [...],
+  "blob": {
+    "total_requests": 120,
+    "endpoints_seen": ["/mine", "/status", "/compress"],
+    "dna_seed": 849302174
+  }
 }
 ```
+
+---
+
+## ENTITY — Your Companion
+
+The TUI panel labelled **ENTITY** is a virtual companion that evolves silently as you play. You don't interact with it directly — it watches your API activity and grows.
+
+### Evolution stages
+
+| Stage | Calls needed | Name |
+|-------|-------------|------|
+| 1 | 0+ | dormant |
+| 2 | 51+ | stirring |
+| 3 | 201+ | awakening |
+| 4 | 501+ | evolving |
+| 5 | 2001+ | ascendant |
+
+### DNA
+
+After your first 8 API calls, the ENTITY locks in a **DNA seed** derived from the exact sequence of endpoints you hit. This seed permanently determines its eyes, mouth, limbs, aura shape, and color for the rest of the run. Two players who mine in different orders will have visually different entities.
+
+The DNA seed is shown in the panel footer as a 6-character hex string. It never changes — until you prestige.
+
+### Endpoint-driven features
+
+Each endpoint you use for the first time unlocks a new body part:
+
+| Endpoint first called | Feature unlocked |
+|-----------------------|-----------------|
+| `/mine` | Eyes appear |
+| `/status` | Mouth appears |
+| `/compress` | Arms appear |
+| `/automate` | Body appears |
+| `/overclock` | Eyes glow (◉) |
+| `/pipeline` | Limb style changes |
+| `/prestige` | Accent mark (∧) above head |
+| any `/dark-ops/` | Heavy dark aura |
+
+### Entropy aura
+
+The aura surrounding the ENTITY reflects your current entropy level in real time — lighter at low entropy, heavier and denser as you push into danger zones.
+
+### Prestige reset
+
+When you prestige, the ENTITY resets completely. Your next run starts a fresh entity shaped by your new sequence of first 8 calls.
 
 ---
 
@@ -579,20 +679,23 @@ Payload shape:
 | Grinder (Tier 1 unlock) | 1 |
 | Loop Artist | 1 |
 | Danger Zone (survived) | 1 |
-| The Listener | 1 |
+| Scaler (Tier 2 unlock) | 1 |
 | Full Auto | 2 |
+| Titan | 5 |
 | Dark Ops: Finalize | 10 |
 
-**You need 5 Synth to prestige.** Plan accordingly.
+**You need 5 Synth to prestige.** The fastest path: Grinder + Loop Artist + Danger Zone + Scaler = 4, then Full Auto puts you over.
 
 ---
 
 ## Tips for Testers
 
 - **Entropy ≥ 90 = hard lock.** Call `/compress` or wait. Don't panic.
-- **The 1-second mine cooldown** is enforced globally server-side. Parallel calls won't help.
+- **The 1-second mine cooldown** is enforced globally server-side. Parallel calls won't help — use `Session()` for speed, not concurrency.
 - **Missions complete automatically** — no separate submission call needed. The server detects conditions on each API hit.
 - **Pipeline cooldown is shared** with individual `/mine` calls. You can't bypass the 1s limit through pipelines.
 - **The Scheduler mission resets** if you take a gap >5 seconds between mines, or fails permanently if your interval is wrong. Run it clean.
+- **Full Auto tracks passive ticks**, not script runtime — register an automation and leave the server running for 10 minutes.
 - **Prestige multiplier stacks** — each prestige multiplies your multiplier by 1.5 (1.0 → 1.5 → 2.25 → ...).
 - **Dark Ops finalize has a 5-minute timestamp window** — generate your timestamp immediately before submitting.
+- **ENTITY DNA is permanent per run** — your first 8 endpoints define it. Experiment across prestiges to see different forms.
