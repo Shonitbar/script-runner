@@ -14,6 +14,7 @@ Write code, hit an API, earn cycles. The server runs locally — you are the aut
 [![Last Commit](https://img.shields.io/github/last-commit/Shonitbar/script-runner?style=for-the-badge&color=purple)](https://github.com/Shonitbar/script-runner/commits/main)
 [![Python](https://img.shields.io/badge/python-3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
 [![Issues](https://img.shields.io/github/issues/Shonitbar/script-runner?style=for-the-badge&color=red)](https://github.com/Shonitbar/script-runner/issues)
+[![CI](https://github.com/Shonitbar/script-runner/actions/workflows/ci.yml/badge.svg)](https://github.com/Shonitbar/script-runner/actions/workflows/ci.yml)
 
 </div>
 
